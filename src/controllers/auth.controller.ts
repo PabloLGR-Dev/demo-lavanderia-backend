@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { eq, and, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
+import { sendPasswordResetEmailAsync } from '../services/email.service.js';
 
 // Extendemos Request para el middleware (ruta /me)
 export interface AuthRequest extends Request {
@@ -152,5 +153,163 @@ export const me = async (req: AuthRequest, res: Response) => {
     } catch (error) {
         console.error('Error en /me:', error);
         res.status(500).json({ message: 'Error obteniendo datos del usuario' });
+    }
+};
+
+// Helper para obtener fecha actual de RD, permitiendo sumar minutos
+const getDRDateTime = (addMinutes: number = 0) => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() + addMinutes);
+    const options: Intl.DateTimeFormatOptions = { 
+        timeZone: 'America/Santo_Domingo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false 
+    };
+    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(d);
+    const map = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+    const hour = map.hour === '24' ? '00' : map.hour;
+    return `${map.year}-${map.month}-${map.day}T${hour}:${map.minute}:${map.second}`;
+};
+
+// Generador de código aleatorio de 6 dígitos
+const generateRandomToken = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// ==========================================
+// RECUPERACIÓN DE CONTRASEÑA
+// ==========================================
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ message: "El correo es requerido" });
+        }
+
+        const usuariosQuery = await db.select().from(schema.usuarios).where(eq(schema.usuarios.email, email));
+        
+        // Respondemos igual aunque no exista el correo por seguridad
+        if (usuariosQuery.length === 0) {
+            return res.json({ message: "Si el correo está registrado, se enviará un código de recuperación." });
+        }
+
+        const usuario = usuariosQuery[0];
+        const resetToken = generateRandomToken();
+        const expireTime = getDRDateTime(30); // Expira en 30 minutos
+
+        await db.update(schema.usuarios)
+            .set({ 
+                passwordresettoken: resetToken,
+                passwordresettokenexpiry: expireTime
+            })
+            .where(eq(schema.usuarios.idusuario, usuario.idusuario));
+
+        const emailEnviado = await sendPasswordResetEmailAsync(
+            usuario.email!, 
+            `${usuario.nombre} ${usuario.apellido || ''}`.trim(), 
+            resetToken
+        );
+
+        if (!emailEnviado) {
+            return res.status(500).json({ message: "Hubo un problema enviando el correo de recuperación." });
+        }
+
+        res.json({ message: "Si el correo está registrado, se enviará un código de recuperación." });
+    } catch (error) {
+        console.error("Error en forgotPassword:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+};
+
+export const validateResetToken = async (req: Request, res: Response) => {
+    try {
+        const { email, token } = req.body;
+
+        if (!email || !token) {
+            return res.status(400).json({ message: "Email y Token son requeridos" });
+        }
+
+        const usuariosQuery = await db.select().from(schema.usuarios).where(eq(schema.usuarios.email, email));
+        
+        if (usuariosQuery.length === 0) {
+            return res.status(400).json({ message: "Token inválido o expirado" });
+        }
+
+        const usuario = usuariosQuery[0];
+        const ahora = getDRDateTime();
+        
+        // Normalizar el formato de fecha de Postgres reemplazando el espacio por 'T'
+        const fechaExpiracionDB = usuario.passwordresettokenexpiry 
+            ? usuario.passwordresettokenexpiry.replace(' ', 'T') 
+            : '';
+        
+        // Comparamos el token asegurándonos de que no tenga espacios extra
+        if (usuario.passwordresettoken !== token.trim() || !fechaExpiracionDB || fechaExpiracionDB < ahora) {
+            return res.status(400).json({ message: "Token inválido o expirado" });
+        }
+
+        res.json({ valid: true, message: "Token validado correctamente" });
+    } catch (error) {
+        console.error("Error en validateResetToken:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, token, newPassword, confirmPassword } = req.body;
+
+        if (!email || !token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: "Todos los campos son requeridos" });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: "Las contraseñas no coinciden" });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres" });
+        }
+
+        const usuariosQuery = await db.select().from(schema.usuarios).where(eq(schema.usuarios.email, email));
+        
+        if (usuariosQuery.length === 0) {
+            return res.status(400).json({ message: "Token inválido o expirado" });
+        }
+
+        const usuario = usuariosQuery[0];
+        const ahora = getDRDateTime();
+        
+        // Normalizamos la fecha para la validación final
+        const fechaExpiracionDB = usuario.passwordresettokenexpiry 
+            ? usuario.passwordresettokenexpiry.replace(' ', 'T') 
+            : '';
+        
+        if (usuario.passwordresettoken !== token.trim() || !fechaExpiracionDB || fechaExpiracionDB < ahora) {
+            return res.status(400).json({ message: "Token inválido o expirado" });
+        }
+
+        // Encriptar nueva contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Actualizar contraseña y limpiar tokens. 
+        // ❌ Eliminada la propiedad fechaultimaactualizacion porque no existe en la tabla usuarios.
+        await db.update(schema.usuarios)
+            .set({ 
+                passwordhash: hashedPassword,
+                passwordresettoken: null,
+                passwordresettokenexpiry: null
+            })
+            .where(eq(schema.usuarios.idusuario, usuario.idusuario));
+
+        res.json({ message: "Contraseña actualizada exitosamente" });
+
+    } catch (error) {
+        console.error("Error en resetPassword:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
     }
 };
