@@ -35,7 +35,7 @@ const getConfigBool = async (txOrDb: any, clave: string): Promise<boolean> => {
 
 export const getFacturasResumen = async (req: Request, res: Response) => {
     try {
-        const { search, estadoId, fechaDesde, fechaHasta, page = 1, pageSize = 20 } = req.query;
+        const { search, estadoId, fechaDesde, fechaHasta, clienteId, page = 1, pageSize = 20 } = req.query;
         
         const currentPage = Math.max(1, Number(page));
         const limit = Math.max(1, Number(pageSize));
@@ -44,6 +44,7 @@ export const getFacturasResumen = async (req: Request, res: Response) => {
         const filters = [];
 
         if (estadoId) filters.push(eq(schema.facturas.idestado, Number(estadoId)));
+        if (clienteId) filters.push(eq(schema.facturas.idcliente, Number(clienteId)));
         
         // Uso de fechas locales de RD para los filtros
         if (fechaDesde) filters.push(gte(schema.facturas.fechacreacion, getDRDateOnly(fechaDesde as string) + "T00:00:00"));
@@ -100,7 +101,6 @@ export const getFacturasResumen = async (req: Request, res: Response) => {
             numeroFactura: f.factura.numerofactura,
             nombreCliente: f.factura.nombrecliente,
             telefonoCliente: f.factura.telefonocliente,
-            // Pasamos la fecha exacta de la DB reemplazando espacio por T para evitar conversión UTC del navegador
             fechaCreacion: f.factura.fechacreacion ? f.factura.fechacreacion.replace(" ", "T") : null,
             fechaEntregaEstimada: f.factura.fechaentregaestimada ? f.factura.fechaentregaestimada.replace(" ", "T") : null,
             total: Number(f.factura.total),
@@ -275,7 +275,6 @@ export const createFactura = async (req: AuthRequest, res: Response) => {
                 throw new Error("Debe proporcionar el nombre del cliente");
             }
 
-            // HORA LOCAL DE REPÚBLICA DOMINICANA
             const hoyStr = getDRDateTime();
             const dateStr = getDRDateOnly().replace(/-/g, '');
             
@@ -295,7 +294,7 @@ export const createFactura = async (req: AuthRequest, res: Response) => {
                 }
             }
 
-            let estadoFactura = 4; // Pendiente
+            let estadoFactura = 4;
             let montoAbonado = 0;
             const totalStr = (dto.total || 0).toString();
             let montoPendiente = Number(dto.total || 0);
@@ -303,14 +302,14 @@ export const createFactura = async (req: AuthRequest, res: Response) => {
             if (dto.pagoInmediato && dto.montoAbonado > 0) {
                 montoAbonado = Number(dto.montoAbonado);
                 montoPendiente = Number(dto.total || 0) - montoAbonado;
-                estadoFactura = montoPendiente <= 0 ? 5 : 4; // 5 Pagado, 4 Pendiente
+                estadoFactura = montoPendiente <= 0 ? 5 : 4;
             }
 
             let estadoEntrega = null;
             if (controlEntregasActivo) {
                 const tieneServicios = dto.detalles.some((d: any) => d.idPrendaServicio && d.idPrendaServicio > 0);
                 if (tieneServicios) {
-                    estadoEntrega = 7; // Entrega_Pendiente
+                    estadoEntrega = 7;
                 }
             }
 
@@ -729,7 +728,6 @@ export const getEstadisticas = async (req: Request, res: Response) => {
 export const getProximasEntrega = async (req: Request, res: Response) => {
     try {
         const dias = Number(req.query.dias) || 3;
-        // Simulamos la fecha actual en RD para calcular el límite
         const hoyStr = getDRDateTime();
         const hoyDate = new Date(hoyStr);
         hoyDate.setDate(hoyDate.getDate() + dias);
