@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -11,17 +12,29 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:pull": "drizzle-kit pull"
+=======
+    "dev": "tsx watch src/index",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+<<<<<<< HEAD
     "bcrypt": "^6.0.0",
+=======
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
+<<<<<<< HEAD
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0"
@@ -37,5 +50,18 @@
     "drizzle-kit": "^0.18.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
+=======
+    "pg": "^8.20.0",
+    "postgres": "^3.4.9",
+    "typescript": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.2",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0"
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
   }
 }

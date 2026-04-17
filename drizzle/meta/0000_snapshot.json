@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "id": "00000000-0000-0000-0000-000000000000",
   "prevId": "",
   "version": "7",
@@ -34,11 +35,32 @@
         "valor": {
           "name": "valor",
           "type": "varchar(500)",
+=======
+  "id": "a8f5f41c-69e4-471d-832b-866500e3bbc5",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.categorias_gasto": {
+      "name": "categorias_gasto",
+      "schema": "",
+      "columns": {
+        "id_categoria_gasto": {
+          "name": "id_categoria_gasto",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "primaryKey": false,
           "notNull": true
         },
         "descripcion": {
           "name": "descripcion",
+<<<<<<< HEAD
           "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false
@@ -62,11 +84,36 @@
           "primaryKey": false,
           "notNull": true,
           "default": "CURRENT_TIMESTAMP"
+=======
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+<<<<<<< HEAD
       "uniqueConstraints": {
         "configuraciones_clave_key": {
           "columns": [
@@ -78,12 +125,249 @@
       },
       "checkConstraints": {},
       "policies": {},
+=======
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.categorias_producto": {
+      "name": "categorias_producto",
+      "schema": "",
+      "columns": {
+        "id_categoria": {
+          "name": "id_categoria",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.clientes": {
+      "name": "clientes",
+      "schema": "",
+      "columns": {
+        "id_cliente": {
+          "name": "id_cliente",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apellido": {
+          "name": "apellido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "direccion": {
+          "name": "direccion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefono": {
+          "name": "telefono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_registro": {
+          "name": "fecha_registro",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.configuraciones": {
+      "name": "configuraciones",
+      "schema": "",
+      "columns": {
+        "id_configuracion": {
+          "name": "id_configuracion",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor": {
+          "name": "valor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_dato": {
+          "name": "tipo_dato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.detalle_factura": {
+      "name": "detalle_factura",
+      "schema": "",
+      "columns": {
+        "id_detalle": {
+          "name": "id_detalle",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_factura": {
+          "name": "id_factura",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_prenda_servicio": {
+          "name": "id_prenda_servicio",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cantidad": {
+          "name": "cantidad",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precio_unitario": {
+          "name": "precio_unitario",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subtotal": {
+          "name": "subtotal",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "id_producto": {
+          "name": "id_producto",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_item": {
+          "name": "tipo_item",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.estados": {
       "name": "estados",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idestado": {
           "name": "idestado",
           "type": "integer",
@@ -104,6 +388,17 @@
         "nombre": {
           "name": "nombre",
           "type": "varchar(50)",
+=======
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "primaryKey": false,
           "notNull": true
         },
@@ -117,6 +412,7 @@
           "name": "activo",
           "type": "boolean",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": false,
           "default": true
         },
@@ -126,12 +422,24 @@
           "primaryKey": false,
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
+=======
+          "notNull": true,
+          "default": true
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+<<<<<<< HEAD
       "checkConstraints": {},
       "policies": {},
       "isRLSEnabled": false
@@ -313,12 +621,17 @@
       "uniqueConstraints": {},
       "checkConstraints": {},
       "policies": {},
+=======
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.facturas": {
       "name": "facturas",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idfactura": {
           "name": "idfactura",
           "type": "integer",
@@ -388,24 +701,94 @@
         },
         "fechaentregaestimada": {
           "name": "fechaentregaestimada",
+=======
+        "id_factura": {
+          "name": "id_factura",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_cliente": {
+          "name": "id_cliente",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nombre_cliente": {
+          "name": "nombre_cliente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefono_cliente": {
+          "name": "telefono_cliente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_factura": {
+          "name": "numero_factura",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_entrega_estimada": {
+          "name": "fecha_entrega_estimada",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "type": "date",
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "fechaentregareal": {
           "name": "fechaentregareal",
+=======
+        "fecha_entrega_real": {
+          "name": "fecha_entrega_real",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "subtotal": {
           "name": "subtotal",
+<<<<<<< HEAD
           "type": "numeric(10, 2)",
+=======
+          "type": "numeric",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "primaryKey": false,
           "notNull": true
         },
         "impuestos": {
           "name": "impuestos",
+<<<<<<< HEAD
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false,
@@ -430,6 +813,29 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'efectivo'"
+=======
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descuento": {
+          "name": "descuento",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total": {
+          "name": "total",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metodo_pago": {
+          "name": "metodo_pago",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         },
         "notas": {
           "name": "notas",
@@ -437,6 +843,7 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "montoabonado": {
           "name": "montoabonado",
           "type": "numeric(10, 2)",
@@ -604,10 +1011,33 @@
         },
         "descripcion": {
           "name": "descripcion",
+=======
+        "monto_abonado": {
+          "name": "monto_abonado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto_pendiente": {
+          "name": "monto_pendiente",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado_entrega": {
+          "name": "id_estado_entrega",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recogido_por": {
+          "name": "recogido_por",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "fechacreacion": {
           "name": "fechacreacion",
           "type": "timestamp",
@@ -1015,12 +1445,28 @@
       },
       "checkConstraints": {},
       "policies": {},
+=======
+        "notas_entrega": {
+          "name": "notas_entrega",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.gastos": {
       "name": "gastos",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idgasto": {
           "name": "idgasto",
           "type": "integer",
@@ -1052,18 +1498,45 @@
         },
         "fechagasto": {
           "name": "fechagasto",
+=======
+        "id_gasto": {
+          "name": "id_gasto",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_categoria_gasto": {
+          "name": "id_categoria_gasto",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_gasto": {
+          "name": "fecha_gasto",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },
         "descripcion": {
           "name": "descripcion",
+<<<<<<< HEAD
           "type": "varchar(500)",
+=======
+          "type": "text",
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
           "primaryKey": false,
           "notNull": false
         },
         "referencia": {
           "name": "referencia",
+<<<<<<< HEAD
           "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false
@@ -1156,12 +1629,58 @@
         }
       },
       "policies": {},
+=======
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comprobante_url": {
+          "name": "comprobante_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.pagos": {
       "name": "pagos",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idpago": {
           "name": "idpago",
           "type": "integer",
@@ -1229,6 +1748,63 @@
           "primaryKey": false,
           "notNull": true
         },
+=======
+        "id_pago": {
+          "name": "id_pago",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_factura": {
+          "name": "id_factura",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_pago": {
+          "name": "fecha_pago",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "metodo_pago": {
+          "name": "metodo_pago",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referencia": {
+          "name": "referencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         "notas": {
           "name": "notas",
           "type": "text",
@@ -1237,6 +1813,7 @@
         }
       },
       "indexes": {},
+<<<<<<< HEAD
       "foreignKeys": {
         "fk_pagos_estados": {
           "name": "fk_pagos_estados",
@@ -1290,12 +1867,57 @@
         }
       },
       "policies": {},
+=======
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.prendas_servicios": {
+      "name": "prendas_servicios",
+      "schema": "",
+      "columns": {
+        "id_prenda_servicio": {
+          "name": "id_prenda_servicio",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_prenda": {
+          "name": "id_prenda",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_servicio": {
+          "name": "id_servicio",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "precio_unitario": {
+          "name": "precio_unitario",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.prendas": {
       "name": "prendas",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idprenda": {
           "name": "idprenda",
           "type": "integer",
@@ -1318,6 +1940,19 @@
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
+=======
+        "id_prenda": {
+          "name": "id_prenda",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         },
         "descripcion": {
           "name": "descripcion",
@@ -1330,14 +1965,214 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+<<<<<<< HEAD
       "checkConstraints": {},
       "policies": {},
+=======
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.productos": {
+      "name": "productos",
+      "schema": "",
+      "columns": {
+        "id_producto": {
+          "name": "id_producto",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigo_barras": {
+          "name": "codigo_barras",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "precio_venta": {
+          "name": "precio_venta",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "costo": {
+          "name": "costo",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stock_actual": {
+          "name": "stock_actual",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "stock_minimo": {
+          "name": "stock_minimo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "id_categoria": {
+          "name": "id_categoria",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.refresh_tokens": {
+      "name": "refresh_tokens",
+      "schema": "",
+      "columns": {
+        "id_refresh_tokens": {
+          "name": "id_refresh_tokens",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created": {
+          "name": "created",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "created_by_ip": {
+          "name": "created_by_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked": {
+          "name": "revoked",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_by_ip": {
+          "name": "revoked_by_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replaced_by_token": {
+          "name": "replaced_by_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.roles": {
+      "name": "roles",
+      "schema": "",
+      "columns": {
+        "id_rol": {
+          "name": "id_rol",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     },
     "public.servicios": {
       "name": "servicios",
       "schema": "",
       "columns": {
+<<<<<<< HEAD
         "idservicio": {
           "name": "idservicio",
           "type": "integer",
@@ -1360,6 +2195,19 @@
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
+=======
+        "id_servicio": {
+          "name": "id_servicio",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         },
         "descripcion": {
           "name": "descripcion",
@@ -1373,17 +2221,26 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "idestado": {
           "name": "idestado",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+=======
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         },
         "fecha_creacion": {
           "name": "fecha_creacion",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
+<<<<<<< HEAD
           "default": "CURRENT_TIMESTAMP"
         },
         "fechaultimaactualizacion": {
@@ -1443,12 +2300,23 @@
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
+=======
+          "default": "now()"
+        },
+        "fecha_ultima_actualizacion": {
+          "name": "fecha_ultima_actualizacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+<<<<<<< HEAD
       "checkConstraints": {},
       "policies": {},
       "isRLSEnabled": false
@@ -1691,6 +2559,110 @@
       "uniqueConstraints": {},
       "checkConstraints": {},
       "policies": {},
+=======
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuario_rol": {
+      "name": "usuario_rol",
+      "schema": "",
+      "columns": {
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "id_rol": {
+          "name": "id_rol",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fecha_asignacion": {
+          "name": "fecha_asignacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id_usuario": {
+          "name": "id_usuario",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apellido": {
+          "name": "apellido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_estado": {
+          "name": "id_estado",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "fecha_ultimo_login": {
+          "name": "fecha_ultimo_login",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
       "isRLSEnabled": false
     }
   },
@@ -1701,11 +2673,16 @@
   "policies": {},
   "views": {},
   "_meta": {
+<<<<<<< HEAD
     "schemas": {},
     "tables": {},
     "columns": {}
   },
   "internal": {
+=======
+    "columns": {},
+    "schemas": {},
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
     "tables": {}
   }
 }

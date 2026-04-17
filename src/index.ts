@@ -1,4 +1,5 @@
 import express from 'express';
+<<<<<<< HEAD
 import cors from 'cors';
 import 'dotenv/config';
 
@@ -59,4 +60,33 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Aceptando peticiones solo desde: ${process.env.FRONTEND_URL}`);
+=======
+import clientesRouter from './routes/clientes.js';
+import estadosRouter from './routes/estados.js';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const app = express();
+const PORT = 8000;
+
+app.use(express.json());
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}))
+
+app.use('/api/clientes', clientesRouter)
+app.use('/api/estados', estadosRouter)
+
+app.get('/', (req, res) => {
+  res.send('Hello, welcome to Lavanderia Rodriguez API!')
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+>>>>>>> a2605236b8d969cf5ab6119465d4c37c5d6a9a54
 });

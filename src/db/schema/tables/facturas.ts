@@ -1,0 +1,26 @@
+import { pgTable, bigint, text, timestamp, date, numeric } from "drizzle-orm/pg-core";
+
+export const facturas = pgTable("facturas", {
+  id_factura: bigint("id_factura", { mode: "number" }).primaryKey(),
+  id_cliente: bigint("id_cliente", { mode: "number" }),
+  nombre_cliente: text("nombre_cliente"),
+  telefono_cliente: text("telefono_cliente"),
+  id_usuario: bigint("id_usuario", { mode: "number" }),
+  id_estado: bigint("id_estado", { mode: "number" }),
+  numero_factura: text("numero_factura"),
+  fecha_creacion: timestamp("fecha_creacion").defaultNow(),
+  fecha_ultima_actualizacion: timestamp("fecha_ultima_actualizacion").defaultNow(),
+  fecha_entrega_estimada: date("fecha_entrega_estimada"),
+  fecha_entrega_real: timestamp("fecha_entrega_real"),
+  subtotal: numeric("subtotal").notNull(),
+  impuestos: numeric("impuestos"),
+  descuento: numeric("descuento"),
+  total: numeric("total").notNull(),
+  metodo_pago: text("metodo_pago"),
+  notas: text("notas"),
+  monto_abonado: numeric("monto_abonado"),
+  monto_pendiente: numeric("monto_pendiente"),
+  id_estado_entrega: bigint("id_estado_entrega", { mode: "number" }),
+  recogido_por: text("recogido_por"),
+  notas_entrega: text("notas_entrega"),
+});
