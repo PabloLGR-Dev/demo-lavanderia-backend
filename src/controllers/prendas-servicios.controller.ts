@@ -39,6 +39,34 @@ export const createPrendaServicio = async (req: Request, res: Response) => {
     }
 };
 
+export const updatePrendaServicio = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { precioUnitario } = req.body;
+
+        if (precioUnitario === undefined || precioUnitario === null) {
+            return res.status(400).json({ message: "El precio unitario es requerido" });
+        }
+
+        const actualizado = await db.update(schema.prendaservicio)
+            .set({ preciounitario: precioUnitario })
+            .where(eq(schema.prendaservicio.idprendaservicio, Number(id)))
+            .returning();
+
+        if (actualizado.length === 0) {
+            return res.status(404).json({ message: 'Servicio de prenda no encontrado' });
+        }
+
+        res.json({ 
+            idPrendaServicio: actualizado[0].idprendaservicio,
+            mensaje: 'Precio actualizado correctamente' 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al actualizar el servicio de la prenda' });
+    }
+};
+
 export const deletePrendaServicio = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
