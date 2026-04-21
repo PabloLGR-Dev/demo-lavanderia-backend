@@ -315,7 +315,7 @@ export const createFactura = async (req: AuthRequest, res: Response) => {
 
             let fechaEntregaFormatted = null;
             if (dto.fechaEntregaEstimada) {
-                fechaEntregaFormatted = getDRDateOnly(dto.fechaEntregaEstimada);
+                fechaEntregaFormatted = dto.fechaEntregaEstimada.substring(0, 10);
             }
 
             const nuevaFactura = await tx.insert(schema.facturas).values({
