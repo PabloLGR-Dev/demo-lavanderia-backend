@@ -1,24 +1,30 @@
 // src/services/email.service.ts
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
-
-// Usamos tus credenciales del appsettings.json. 
-// Recomendación: Mueve estas credenciales a tu archivo .env en el futuro.
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_SERVER || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: false, // true para puerto 465, false para 587
-    auth: {
-        user: process.env.SMTP_USER || 'pablolgrdev@gmail.com',
-        pass: process.env.SMTP_PASSWORD || 'qzpr lywt gaho upqq',
-    },
-});
 
 export const sendEmailAsync = async (toEmail: string, subject: string, body: string, isHtml: boolean = true): Promise<boolean> => {
     try {
+        const smtpHost = process.env.SMTP_SERVER;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASSWORD;
+        const smtpPort = Number(process.env.SMTP_PORT) || 587;
+
+        if (!smtpHost || !smtpUser || !smtpPass) {
+            console.error('[EmailService] Faltan variables SMTP en el entorno.');
+            return false;
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: false,
+            auth: { user: smtpUser, pass: smtpPass },
+        });
+
         const mailOptions = {
-            from: `"${process.env.SENDER_NAME || 'Lavandería Rodríguez'}" <${process.env.SMTP_USER || 'pablolgrdev@gmail.com'}>`,
+            from: `"${process.env.SENDER_NAME || 'Lavandería Rodríguez'}" <${smtpUser}>`,
             to: toEmail,
-            subject: subject,
+            subject,
             [isHtml ? 'html' : 'text']: body,
         };
 

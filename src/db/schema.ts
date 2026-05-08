@@ -328,6 +328,57 @@ export const categoriasgasto = pgTable("categoriasgasto", {
 		}),
 ]);
 
+// ==========================================
+// GRUPOS DE FACTURAS
+// ==========================================
+
+export const gruposFacturas = pgTable("grupos_facturas", {
+	idgrupo: integer().primaryKey().generatedByDefaultAsIdentity({ name: "grupos_facturas_idgrupo_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 2147483647, cache: 1 }),
+	nombre: varchar({ length: 100 }).notNull(),
+	idcliente: integer(),
+	nombrecliente: varchar({ length: 100 }),
+	notas: text(),
+	idestado: integer().notNull().default(4),
+	fechacreacion: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	fechaultimaactualizacion: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	idusuario: integer().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.idcliente],
+			foreignColumns: [clientes.idcliente],
+			name: "fk_grupos_facturas_clientes"
+		}),
+	foreignKey({
+			columns: [table.idestado],
+			foreignColumns: [estados.idestado],
+			name: "fk_grupos_facturas_estados"
+		}),
+	foreignKey({
+			columns: [table.idusuario],
+			foreignColumns: [usuarios.idusuario],
+			name: "fk_grupos_facturas_usuarios"
+		}),
+]);
+
+export const gruposFacturasDetalle = pgTable("grupos_facturas_detalle", {
+	id: integer().primaryKey().generatedByDefaultAsIdentity({ name: "grupos_facturas_detalle_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 2147483647, cache: 1 }),
+	idgrupo: integer().notNull(),
+	idfactura: integer().notNull(),
+	fechaasignacion: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.idgrupo],
+			foreignColumns: [gruposFacturas.idgrupo],
+			name: "fk_grupos_detalle_grupo"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.idfactura],
+			foreignColumns: [facturas.idfactura],
+			name: "fk_grupos_detalle_factura"
+		}),
+	unique("grupos_facturas_detalle_idfactura_key").on(table.idfactura),
+]);
+
 export const usuariorol = pgTable("usuariorol", {
 	idusuario: integer().notNull(),
 	idrol: integer().notNull(),

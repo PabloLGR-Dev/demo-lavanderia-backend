@@ -19,6 +19,7 @@ import gastosRoutes from './routes/gastos.routes.js';
 import facturasRoutes from './routes/facturas.routes.js';
 import pagosRoutes from './routes/pagos.routes.js';
 import reportesRoutes from './routes/reportes.routes.js';
+import gruposFacturasRoutes from './routes/grupos-facturas.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,6 +51,7 @@ app.use('/api/gastos', gastosRoutes);
 app.use('/api/facturas', facturasRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/reportes', reportesRoutes);
+app.use('/api/grupos-facturas', gruposFacturasRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: '¡El backend de Lavandería Rodriguez está vivo y conectado!' });
