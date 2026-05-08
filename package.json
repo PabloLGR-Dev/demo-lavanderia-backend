@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:pull": "drizzle-kit pull",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/seed-demo.ts"
+    "db:seed": "tsx src/seed-demo.ts",
+    "db:seed:passwords": "tsx src/seed-passwords.ts"
   },
   "keywords": [],
   "author": "",
