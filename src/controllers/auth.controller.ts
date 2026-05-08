@@ -6,6 +6,7 @@ import { eq, and, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
 import { sendPasswordResetEmailAsync } from '../services/email.service.js';
+import { DEMO_MODE, demoStore } from '../demo/store.js';
 
 // Extendemos Request para el middleware (ruta /me)
 export interface AuthRequest extends Request {
@@ -258,7 +259,33 @@ export const validateResetToken = async (req: Request, res: Response) => {
     }
 };
 
+export const logout = async (req: AuthRequest, res: Response) => {
+    try {
+        if (DEMO_MODE && req.user?.nameid) {
+            demoStore.clearSession(Number(req.user.nameid));
+        }
+
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            await db.update(schema.refreshtokens)
+                .set({ revoked: new Date().toISOString(), revokedbyip: req.ip || 'unknown' })
+                .where(eq(schema.refreshtokens.idusuario, Number(req.user?.nameid)));
+        }
+
+        res.json({ message: 'Sesión cerrada correctamente' });
+    } catch {
+        res.json({ message: 'Sesión cerrada correctamente' });
+    }
+};
+
 export const resetPassword = async (req: Request, res: Response) => {
+    if (DEMO_MODE) {
+        return res.status(403).json({
+            message: 'Modo demo: el cambio de contrasena no esta permitido. Esta es una version de demostracion del sistema.'
+        });
+    }
+
     try {
         const { email, token, newPassword, confirmPassword } = req.body;
 
@@ -297,7 +324,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         // Actualizar contraseña y limpiar tokens. 
-        // ❌ Eliminada la propiedad fechaultimaactualizacion porque no existe en la tabla usuarios.
+        // fechaultimaactualizacion no existe en la tabla usuarios.
         await db.update(schema.usuarios)
             .set({ 
                 passwordhash: hashedPassword,

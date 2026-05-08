@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { 
-    login, 
-    me, 
-    forgotPassword, 
-    validateResetToken, 
-    resetPassword 
+import {
+    login,
+    me,
+    logout,
+    forgotPassword,
+    validateResetToken,
+    resetPassword
 } from '../controllers/auth.controller.js';
 import { authorize } from '../middlewares/auth.middleware.js';
 
@@ -18,5 +19,6 @@ router.post('/reset-password', resetPassword);
 
 // Endpoints protegidos
 router.get('/me', authorize, me);
+router.post('/logout', authorize, logout);
 
 export default router;

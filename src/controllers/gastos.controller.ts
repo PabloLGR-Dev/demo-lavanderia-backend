@@ -3,6 +3,7 @@ import { eq, ilike, and, gte, lte, desc, sql, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { DEMO_MODE, demoStore, isDemoId } from '../demo/store.js';
 
 // --- HELPER DE ZONA HORARIA (República Dominicana UTC-4) ---
 const getDRDateTime = () => {
@@ -27,7 +28,6 @@ export const getGastosResumen = async (req: Request, res: Response) => {
         const { categoriaId, fechaDesde, fechaHasta, search, page = 1, pageSize = 20 } = req.query;
         const currentPage = Math.max(1, Number(page));
         const limit = Math.max(1, Number(pageSize));
-        const offset = (currentPage - 1) * limit;
 
         const filters = [];
 
@@ -49,11 +49,6 @@ export const getGastosResumen = async (req: Request, res: Response) => {
 
         const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
-        const countResult = await db.select({ count: sql<number>`count(*)` })
-            .from(schema.gastos)
-            .where(whereClause);
-        const totalRecords = Number(countResult[0]?.count) || 0;
-
         const gastosDb = await db.select({
             gasto: schema.gastos,
             categoriaNombre: schema.categoriasgasto.nombre,
@@ -66,11 +61,9 @@ export const getGastosResumen = async (req: Request, res: Response) => {
         .innerJoin(schema.usuarios, eq(schema.gastos.idusuario, schema.usuarios.idusuario))
         .innerJoin(schema.estados, eq(schema.gastos.idestado, schema.estados.idestado))
         .where(whereClause)
-        .orderBy(desc(schema.gastos.fechagasto))
-        .limit(limit)
-        .offset(offset);
+        .orderBy(desc(schema.gastos.fechagasto));
 
-        const data = gastosDb.map(g => ({
+        let allData = gastosDb.map(g => ({
             idGasto: g.gasto.idgasto,
             categoria: g.categoriaNombre,
             categoriaColor: g.categoriaColor || '#6B7280',
@@ -83,6 +76,37 @@ export const getGastosResumen = async (req: Request, res: Response) => {
             estado: g.estadoNombre,
             fechaCreacion: g.gasto.fechacreacion ? g.gasto.fechacreacion.replace(" ", "T") : null
         }));
+
+        if (DEMO_MODE) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            let demoGastos = demoStore.getGastos(userId);
+            if (categoriaId) demoGastos = demoGastos.filter(g => g.idcategoriagasto === Number(categoriaId));
+            if (fechaDesde)  demoGastos = demoGastos.filter(g => g.fechagasto >= `${fechaDesde}T00:00:00`);
+            if (fechaHasta)  demoGastos = demoGastos.filter(g => g.fechagasto <= `${fechaHasta}T23:59:59`);
+            if (search) {
+                const s = (search as string).toLowerCase();
+                demoGastos = demoGastos.filter(g => (g.descripcion || '').toLowerCase().includes(s) || (g.referencia || '').toLowerCase().includes(s));
+            }
+            const demoItems = demoGastos.map(g => ({
+                idGasto: g.idgasto,
+                categoria: g.categoriaNombre,
+                categoriaColor: g.categoriaColor,
+                monto: Number(g.monto),
+                fechaGasto: g.fechagasto,
+                descripcion: g.descripcion,
+                referencia: g.referencia,
+                comprobanteUrl: g.comprobanteurl,
+                usuario: g.usuarioNombre,
+                estado: 'Activo',
+                fechaCreacion: g.fechacreacion
+            }));
+            allData = [...demoItems, ...allData];
+            allData.sort((a, b) => (b.fechaGasto || '').localeCompare(a.fechaGasto || ''));
+        }
+
+        const totalRecords = allData.length;
+        const offset = (currentPage - 1) * limit;
+        const data = allData.slice(offset, offset + limit);
 
         res.json({
             data,
@@ -138,6 +162,42 @@ export const getGastoById = async (req: Request, res: Response) => {
 };
 
 export const createGasto = async (req: AuthRequest, res: Response) => {
+    if (DEMO_MODE) {
+        try {
+            const userId = Number(req.user.nameid);
+            const dto = req.body;
+            const hoyStr = getDRDateTime();
+            let fechaGastoFormat = hoyStr;
+            if (dto.fechaGasto) fechaGastoFormat = `${dto.fechaGasto}T${hoyStr.split('T')[1]}`;
+
+            const catRows = await db.select().from(schema.categoriasgasto).where(eq(schema.categoriasgasto.idcategoriagasto, dto.idCategoriaGasto));
+            if (catRows.length === 0) return res.status(400).json({ message: 'Categoría no encontrada' });
+
+            const userRows = await db.select({ nombre: schema.usuarios.nombre }).from(schema.usuarios).where(eq(schema.usuarios.idusuario, userId));
+            const usuarioNombre = userRows[0]?.nombre || 'Demo';
+
+            const nuevoGasto = demoStore.addGasto(userId, {
+                idcategoriagasto: dto.idCategoriaGasto,
+                categoriaNombre: catRows[0].nombre,
+                categoriaColor: catRows[0].color || '#6B7280',
+                usuarioNombre,
+                monto: String(dto.monto),
+                fechagasto: fechaGastoFormat,
+                descripcion: dto.descripcion?.trim() || null,
+                referencia: dto.referencia?.trim() || null,
+                comprobanteurl: dto.comprobanteUrl?.trim() || null,
+                idusuario: userId,
+                idestado: dto.idEstado || 1,
+                fechacreacion: hoyStr,
+                fechaultimaactualizacion: hoyStr
+            });
+
+            return res.status(201).json({ idgasto: nuevoGasto.idgasto, message: 'Gasto creado (modo demo)' });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message || 'Error al crear gasto demo' });
+        }
+    }
+
     try {
         const userId = Number(req.user.nameid);
         const dto = req.body;
@@ -173,8 +233,23 @@ export const createGasto = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateGasto = async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (DEMO_MODE) {
+        if (isDemoId(id)) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            const dto = req.body;
+            const hoyStr = getDRDateTime();
+            const patch: any = { fechaultimaactualizacion: hoyStr };
+            if (dto.monto !== undefined) patch.monto = String(dto.monto);
+            if (dto.fechaGasto) patch.fechagasto = `${dto.fechaGasto}T${hoyStr.split('T')[1]}`;
+            if (dto.descripcion !== undefined) patch.descripcion = dto.descripcion?.trim() || null;
+            if (dto.referencia !== undefined) patch.referencia = dto.referencia?.trim() || null;
+            demoStore.updateGasto(userId, id, patch);
+            return res.json({ message: 'Gasto actualizado (modo demo)' });
+        }
+        return res.status(403).json({ message: 'Modo demo: no se pueden modificar datos historicos.' });
+    }
     try {
-        const id = Number(req.params.id);
         const dto = req.body;
         const hoyStr = getDRDateTime();
 
@@ -205,8 +280,17 @@ export const updateGasto = async (req: Request, res: Response) => {
 };
 
 export const deleteGasto = async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (DEMO_MODE) {
+        if (isDemoId(id)) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            demoStore.deleteGasto(userId, id);
+            return res.status(204).send();
+        }
+        return res.status(403).json({ message: 'Modo demo: no se pueden eliminar datos historicos.' });
+    }
     try {
-        const eliminado = await db.delete(schema.gastos).where(eq(schema.gastos.idgasto, Number(req.params.id))).returning();
+        const eliminado = await db.delete(schema.gastos).where(eq(schema.gastos.idgasto, id)).returning();
         if (eliminado.length === 0) return res.status(404).json({ message: 'Gasto no encontrado' });
         res.status(204).send();
     } catch (error) {

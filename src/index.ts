@@ -4,8 +4,6 @@ import 'dotenv/config';
 
 // Importar rutas
 import clientesRoutes from './routes/clientes.routes.js';
-import rolesRoutes from './routes/roles.routes.js';
-import usuariosRoutes from './routes/usuarios.routes.js';
 import configuracionesRoutes from './routes/configuraciones.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
@@ -37,8 +35,6 @@ app.use(express.json());
 // Rutas
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/clientes', clientesRoutes);
-app.use('/api/roles', rolesRoutes);
-app.use('/api/users', usuariosRoutes);
 app.use('/api/configuraciones', configuracionesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/Categorias', categoriasRoutes);
@@ -54,7 +50,7 @@ app.use('/api/reportes', reportesRoutes);
 app.use('/api/grupos-facturas', gruposFacturasRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ message: '¡El backend de Lavandería Rodriguez está vivo y conectado!' });
+  res.json({ message: 'Backend Lavanderia Rodriguez activo.' });
 });
 
 app.listen(PORT, () => {

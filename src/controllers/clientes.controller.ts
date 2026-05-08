@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { eq, and, or, ilike, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
+import { DEMO_MODE, demoStore, isDemoId } from '../demo/store.js';
 
 // --- HELPER PARA MAPEAR AL FORMATO DEL FRONTEND ---
 // Esto evita que el frontend se rompa por las minúsculas de PostgreSQL
@@ -25,54 +26,41 @@ export const getClientes = async (req: Request, res: Response) => {
 
     const currentPage = Math.max(1, Number(page));
     const limitPerPage = Math.max(1, Number(limit));
-    const offset = (currentPage - 1) * limitPerPage;
 
     const filterConditions = [];
-
     if (search) {
       const searchStr = `%${search}%`;
-      filterConditions.push(
-        or(
-          ilike(schema.clientes.nombre, searchStr),
-          ilike(schema.clientes.apellido, searchStr),
-          ilike(schema.clientes.email, searchStr),
-          ilike(schema.clientes.telefono, searchStr) // Agregado como en .NET
-        )
-      );
+      filterConditions.push(or(ilike(schema.clientes.nombre, searchStr), ilike(schema.clientes.apellido, searchStr), ilike(schema.clientes.email, searchStr), ilike(schema.clientes.telefono, searchStr)));
     }
-
-    if (estado) {
-      filterConditions.push(eq(schema.clientes.idestado, Number(estado)));
-    }
+    if (estado) filterConditions.push(eq(schema.clientes.idestado, Number(estado)));
 
     const whereClause = filterConditions.length > 0 ? and(...filterConditions) : undefined;
 
-    const countResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.clientes)
-      .where(whereClause);
+    const clientesList = await db.select().from(schema.clientes).where(whereClause).orderBy(desc(schema.clientes.fecharegistro));
+    let allData = clientesList.map(mapClienteToDto);
 
-    const totalCount = Number(countResult[0]?.count) || 0;
+    if (DEMO_MODE) {
+      const userId = Number((req as any).user?.nameid);
+      let demoClientes = demoStore.getClientes(userId);
+      if (search) {
+        const s = (search as string).toLowerCase();
+        demoClientes = demoClientes.filter(c =>
+          c.nombre.toLowerCase().includes(s) || (c.apellido || '').toLowerCase().includes(s) ||
+          (c.email || '').toLowerCase().includes(s) || (c.telefono || '').toLowerCase().includes(s)
+        );
+      }
+      if (estado) demoClientes = demoClientes.filter(c => c.idestado === Number(estado));
+      const demoItems = demoClientes.map(c => mapClienteToDto(c as any));
+      allData = [...demoItems, ...allData];
+    }
 
-    const clientesList = await db
-      .select()
-      .from(schema.clientes)
-      .where(whereClause)
-      .orderBy(desc(schema.clientes.fecharegistro))
-      .limit(limitPerPage)
-      .offset(offset);
-
-    // Mapeamos la lista antes de enviarla
-    const dataMapped = clientesList.map(mapClienteToDto);
+    const totalCount = allData.length;
+    const offset = (currentPage - 1) * limitPerPage;
+    const dataMapped = allData.slice(offset, offset + limitPerPage);
 
     res.status(200).json({
       data: dataMapped,
-      pagination: {
-        page: currentPage,
-        limit: limitPerPage,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limitPerPage),
-      }
+      pagination: { page: currentPage, limit: limitPerPage, total: totalCount, totalPages: Math.ceil(totalCount / limitPerPage) }
     });
   } catch (error) {
     console.error(`Get /clientes error: ${error}`);
@@ -99,6 +87,28 @@ export const getClienteById = async (req: Request, res: Response) => {
 
 // 3. Crear un nuevo cliente
 export const createCliente = async (req: Request, res: Response) => {
+  if (DEMO_MODE) {
+    try {
+      const { nombre, apellido, direccion, telefono, email, idEstado, notas } = req.body;
+      if (!nombre) return res.status(400).json({ message: 'El nombre es obligatorio' });
+      const userId = Number((req as any).user?.nameid);
+      const now = new Date().toISOString();
+      const nuevoCliente = demoStore.addCliente(userId, {
+        nombre: nombre.trim(),
+        apellido: apellido?.trim() || null,
+        direccion: direccion?.trim() || null,
+        telefono: telefono?.trim() || null,
+        email: email?.trim() || null,
+        idestado: idEstado || 1,
+        fecharegistro: now,
+        fechaultimaactualizacion: now,
+        notas: notas?.trim() || null
+      });
+      return res.status(201).json(mapClienteToDto(nuevoCliente as any));
+    } catch (error) {
+      return res.status(500).json({ error: 'Error al crear el cliente demo' });
+    }
+  }
   try {
     const { nombre, apellido, direccion, telefono, email, idEstado, notas } = req.body;
 
@@ -125,6 +135,25 @@ export const createCliente = async (req: Request, res: Response) => {
 
 // 4. Actualizar un cliente existente
 export const updateCliente = async (req: Request, res: Response) => {
+  const numId = Number(req.params.id);
+  if (DEMO_MODE) {
+    if (isDemoId(numId)) {
+      const userId = Number((req as any).user?.nameid);
+      const { nombre, apellido, direccion, telefono, email, idEstado, notas } = req.body;
+      const patch: any = { fechaultimaactualizacion: new Date().toISOString() };
+      if (nombre !== undefined) patch.nombre = nombre.trim();
+      if (apellido !== undefined) patch.apellido = apellido?.trim() || null;
+      if (direccion !== undefined) patch.direccion = direccion?.trim() || null;
+      if (telefono !== undefined) patch.telefono = telefono?.trim() || null;
+      if (email !== undefined) patch.email = email?.trim() || null;
+      if (notas !== undefined) patch.notas = notas?.trim() || null;
+      if (idEstado !== undefined) patch.idestado = idEstado;
+      demoStore.updateCliente(userId, numId, patch);
+      const updated = demoStore.getClienteById(userId, numId);
+      return updated ? res.json(mapClienteToDto(updated as any)) : res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+    return res.status(403).json({ message: 'Modo demo: no se pueden modificar datos historicos.' });
+  }
   try {
     const { id } = req.params;
     const { nombre, apellido, direccion, telefono, email, idEstado, notas } = req.body;
@@ -154,6 +183,15 @@ export const updateCliente = async (req: Request, res: Response) => {
 
 // 5. Eliminar un cliente (Soft Delete como en .NET)
 export const deleteCliente = async (req: Request, res: Response) => {
+  const numId = Number(req.params.id);
+  if (DEMO_MODE) {
+    if (isDemoId(numId)) {
+      const userId = Number((req as any).user?.nameid);
+      demoStore.deleteCliente(userId, numId);
+      return res.status(204).send();
+    }
+    return res.status(403).json({ message: 'Modo demo: no se pueden eliminar datos historicos.' });
+  }
   try {
     const { id } = req.params;
 
@@ -179,14 +217,17 @@ export const deleteCliente = async (req: Request, res: Response) => {
 // 6. Obtener clientes activos (Para dropdowns o selects)
 export const getClientesActivos = async (req: Request, res: Response) => {
   try {
-    const clientes = await db.select()
-      .from(schema.clientes)
-      .where(eq(schema.clientes.idestado, 1)); // Estado 1 = Activo
+    const clientesDb = await db.select().from(schema.clientes).where(eq(schema.clientes.idestado, 1));
+    let todos = clientesDb.map(mapClienteToDto);
 
-    // Ordenamos por nombre en memoria (opcional, Drizzle también puede hacerlo en BD)
-    clientes.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    if (DEMO_MODE) {
+      const userId = Number((req as any).user?.nameid);
+      const demoActivos = demoStore.getClientes(userId).filter(c => c.idestado === 1).map(c => mapClienteToDto(c as any));
+      todos = [...demoActivos, ...todos];
+    }
 
-    res.json(clientes.map(mapClienteToDto));
+    todos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    res.json(todos);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener clientes activos' });

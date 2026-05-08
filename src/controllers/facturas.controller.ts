@@ -3,6 +3,7 @@ import { eq, ilike, and, gte, lte, desc, inArray, sql, or } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { DEMO_MODE, demoStore, isDemoId, ESTADO_NOMBRES } from '../demo/store.js';
 
 // --- HELPER DE ZONA HORARIA (República Dominicana UTC-4) ---
 const getDRDateTime = (dateVal?: string | Date) => {
@@ -36,36 +37,20 @@ const getConfigBool = async (txOrDb: any, clave: string): Promise<boolean> => {
 export const getFacturasResumen = async (req: Request, res: Response) => {
     try {
         const { search, estadoId, fechaDesde, fechaHasta, clienteId, page = 1, pageSize = 20 } = req.query;
-        
+
         const currentPage = Math.max(1, Number(page));
         const limit = Math.max(1, Number(pageSize));
-        const offset = (currentPage - 1) * limit;
 
         const filters = [];
-
         if (estadoId) filters.push(eq(schema.facturas.idestado, Number(estadoId)));
         if (clienteId) filters.push(eq(schema.facturas.idcliente, Number(clienteId)));
-        
-        // Uso de fechas locales de RD para los filtros
         if (fechaDesde) filters.push(gte(schema.facturas.fechacreacion, getDRDateOnly(fechaDesde as string) + "T00:00:00"));
         if (fechaHasta) filters.push(lte(schema.facturas.fechacreacion, getDRDateOnly(fechaHasta as string) + "T23:59:59"));
-        
         if (search) {
             const searchStr = `%${search}%`;
-            filters.push(
-                or(
-                    ilike(schema.facturas.numerofactura, searchStr),
-                    ilike(schema.facturas.nombrecliente, searchStr)
-                )!
-            );
+            filters.push(or(ilike(schema.facturas.numerofactura, searchStr), ilike(schema.facturas.nombrecliente, searchStr))!);
         }
-
         const whereClause = filters.length > 0 ? and(...filters) : undefined;
-
-        const countResult = await db.select({ count: sql<number>`count(*)` })
-            .from(schema.facturas)
-            .where(whereClause);
-        const totalRecords = Number(countResult[0]?.count) || 0;
 
         const facturasDb = await db.select({
             factura: schema.facturas,
@@ -75,28 +60,18 @@ export const getFacturasResumen = async (req: Request, res: Response) => {
         .from(schema.facturas)
         .innerJoin(schema.estados, eq(schema.facturas.idestado, schema.estados.idestado))
         .where(whereClause)
-        .orderBy(desc(schema.facturas.fechacreacion))
-        .limit(limit)
-        .offset(offset);
+        .orderBy(desc(schema.facturas.fechacreacion));
 
-        const idsFacturas = facturasDb.map(f => f.factura.idfactura);
+        // Contar items por factura (DB)
+        const allDbIds = facturasDb.map(f => f.factura.idfactura);
         let itemsPorFactura: Record<number, number> = {};
-        
-        if (idsFacturas.length > 0) {
-            const detalles = await db.select({ 
-                idFactura: schema.detallefactura.idfactura, 
-                cantidad: schema.detallefactura.cantidad 
-            })
-            .from(schema.detallefactura)
-            .where(inArray(schema.detallefactura.idfactura, idsFacturas));
-
-            detalles.forEach(d => {
-                if (!itemsPorFactura[d.idFactura]) itemsPorFactura[d.idFactura] = 0;
-                itemsPorFactura[d.idFactura] += d.cantidad;
-            });
+        if (allDbIds.length > 0) {
+            const detalles = await db.select({ idFactura: schema.detallefactura.idfactura, cantidad: schema.detallefactura.cantidad })
+                .from(schema.detallefactura).where(inArray(schema.detallefactura.idfactura, allDbIds));
+            detalles.forEach(d => { itemsPorFactura[d.idFactura] = (itemsPorFactura[d.idFactura] || 0) + d.cantidad; });
         }
 
-        const data = facturasDb.map(f => ({
+        let allData = facturasDb.map(f => ({
             idFactura: f.factura.idfactura,
             numeroFactura: f.factura.numerofactura,
             nombreCliente: f.factura.nombrecliente,
@@ -106,12 +81,52 @@ export const getFacturasResumen = async (req: Request, res: Response) => {
             total: Number(f.factura.total),
             montoAbonado: Number(f.factura.montoabonado || 0),
             montoPendiente: Number(f.factura.montopendiente || 0),
-            estado: {
-                idEstado: f.estadoId,
-                nombre: f.estadoNombre
-            },
+            estado: { idEstado: f.estadoId, nombre: f.estadoNombre },
             totalItems: itemsPorFactura[f.factura.idfactura] || 0
         }));
+
+        // Fusionar registros demo
+        if (DEMO_MODE) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            let demoFacturas = demoStore.getFacturas(userId);
+
+            // Aplicar mismos filtros en memoria
+            if (estadoId) demoFacturas = demoFacturas.filter(f => f.idestado === Number(estadoId));
+            if (clienteId) demoFacturas = demoFacturas.filter(f => f.idcliente === Number(clienteId));
+            if (fechaDesde) demoFacturas = demoFacturas.filter(f => f.fechacreacion >= getDRDateOnly(fechaDesde as string) + "T00:00:00");
+            if (fechaHasta) demoFacturas = demoFacturas.filter(f => f.fechacreacion <= getDRDateOnly(fechaHasta as string) + "T23:59:59");
+            if (search) {
+                const s = (search as string).toLowerCase();
+                demoFacturas = demoFacturas.filter(f =>
+                    f.numerofactura.toLowerCase().includes(s) || (f.nombrecliente || '').toLowerCase().includes(s)
+                );
+            }
+
+            const demoItems = demoFacturas.map(f => {
+                const detalles = demoStore.getDetallesByFactura(userId, f.idfactura);
+                const totalItems = detalles.reduce((acc, d) => acc + d.cantidad, 0);
+                return {
+                    idFactura: f.idfactura,
+                    numeroFactura: f.numerofactura,
+                    nombreCliente: f.nombrecliente,
+                    telefonoCliente: f.telefonocliente,
+                    fechaCreacion: f.fechacreacion,
+                    fechaEntregaEstimada: f.fechaentregaestimada,
+                    total: Number(f.total),
+                    montoAbonado: Number(f.montoabonado),
+                    montoPendiente: Number(f.montopendiente),
+                    estado: { idEstado: f.idestado, nombre: ESTADO_NOMBRES[f.idestado] || 'Desconocido' },
+                    totalItems
+                };
+            });
+
+            allData = [...demoItems, ...allData];
+            allData.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
+        }
+
+        const totalRecords = allData.length;
+        const offset = (currentPage - 1) * limit;
+        const data = allData.slice(offset, offset + limit);
 
         res.json({
             data,
@@ -133,6 +148,73 @@ export const getFacturasResumen = async (req: Request, res: Response) => {
 export const getFacturaDetallesCompletos = async (req: Request, res: Response) => {
     try {
         const idFactura = Number(req.params.id);
+
+        // Demo ID: build response from store
+        if (DEMO_MODE && isDemoId(idFactura)) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            const f = demoStore.getFacturaById(userId, idFactura);
+            if (!f) return res.status(404).json({ message: 'Factura no encontrada' });
+
+            const detallesDemo = demoStore.getDetallesByFactura(userId, idFactura);
+            const pagosDemo    = demoStore.getPagosByFactura(userId, idFactura);
+
+            // Fetch prenda/servicio names for each detalle
+            const detallesConNombres = await Promise.all(detallesDemo.map(async d => {
+                let prendaNombre = null, servicioNombre = null;
+                if (d.idprendaservicio) {
+                    const rows = await db.select({ prenda: schema.prendas.nombre, servicio: schema.servicios.nombre })
+                        .from(schema.prendaservicio)
+                        .innerJoin(schema.prendas, eq(schema.prendaservicio.idprenda, schema.prendas.idprenda))
+                        .innerJoin(schema.servicios, eq(schema.prendaservicio.idservicio, schema.servicios.idservicio))
+                        .where(eq(schema.prendaservicio.idprendaservicio, d.idprendaservicio));
+                    if (rows.length > 0) { prendaNombre = rows[0].prenda; servicioNombre = rows[0].servicio; }
+                }
+                return {
+                    idDetalle: d.iddetalle,
+                    cantidad: d.cantidad,
+                    precioUnitario: Number(d.preciounitario),
+                    descripcion: d.descripcion,
+                    subtotal: d.cantidad * Number(d.preciounitario),
+                    tipo: d.idprendaservicio ? 'servicio' : 'producto',
+                    servicio: d.idprendaservicio ? { idPrendaServicio: d.idprendaservicio, prenda: prendaNombre, servicio: servicioNombre } : null,
+                    producto: null
+                };
+            }));
+
+            return res.json({
+                idFactura: f.idfactura,
+                numeroFactura: f.numerofactura,
+                nombreCliente: f.nombrecliente,
+                telefonoCliente: f.telefonocliente,
+                fechaCreacion: f.fechacreacion,
+                fechaEntregaEstimada: f.fechaentregaestimada,
+                fechaEntregaReal: f.fechaentregareal,
+                subtotal: Number(f.subtotal),
+                impuestos: Number(f.impuestos),
+                descuento: Number(f.descuento),
+                total: Number(f.total),
+                montoAbonado: Number(f.montoabonado),
+                montoPendiente: Number(f.montopendiente),
+                metodoPago: f.metodopago,
+                notas: f.notas,
+                idEstadoEntrega: f.idestadoentrega,
+                recogidoPor: f.recogidopor,
+                notasEntrega: f.notasentrega,
+                cliente: null,
+                estado: { idEstado: f.idestado, nombre: ESTADO_NOMBRES[f.idestado] || 'Desconocido' },
+                usuario: { idUsuario: f.idusuario, nombre: 'Demo' },
+                detalles: detallesConNombres,
+                pagos: pagosDemo.map(p => ({
+                    idPago: p.idpago,
+                    monto: Number(p.monto),
+                    fechaPago: p.fechapago,
+                    metodoPago: p.metodopago,
+                    referencia: p.referencia,
+                    notas: p.notas,
+                    usuario: 'Demo'
+                }))
+            });
+        }
 
         const facturaRows = await db.select({
             factura: schema.facturas,
@@ -252,6 +334,111 @@ export const getFacturaDetallesCompletos = async (req: Request, res: Response) =
 export const createFactura = async (req: AuthRequest, res: Response) => {
     const userId = Number(req.user.nameid);
     const dto = req.body;
+
+    // ── DEMO MODE ──────────────────────────────────────────────────────────────
+    if (DEMO_MODE) {
+        try {
+            if (!dto.detalles || dto.detalles.length === 0) {
+                return res.status(400).json({ message: 'La factura debe tener al menos un detalle' });
+            }
+
+            let nombreCliente = dto.nombreCliente;
+            let telefonoCliente = dto.telefonoCliente || null;
+
+            if (dto.idCliente) {
+                // Check demo store first, then DB
+                const demoCliente = demoStore.getClienteById(userId, Number(dto.idCliente));
+                if (demoCliente) {
+                    nombreCliente = `${demoCliente.nombre} ${demoCliente.apellido || ''}`.trim();
+                    telefonoCliente = demoCliente.telefono || telefonoCliente;
+                } else {
+                    const dbClientes = await db.select().from(schema.clientes).where(eq(schema.clientes.idcliente, Number(dto.idCliente)));
+                    if (dbClientes.length > 0) {
+                        const c = dbClientes[0];
+                        nombreCliente = `${c.nombre} ${c.apellido || ''}`.trim();
+                        telefonoCliente = c.telefono || telefonoCliente;
+                    }
+                }
+            }
+
+            if (!nombreCliente) return res.status(400).json({ message: 'Debe proporcionar el nombre del cliente' });
+
+            const hoyStr = getDRDateTime();
+            const dateStr = getDRDateOnly().replace(/-/g, '');
+            const numeroFactura = `F-${dateStr}-DEMO-${Date.now().toString().slice(-4)}`;
+
+            let montoAbonado = 0;
+            let montoPendiente = Number(dto.total || 0);
+            let estadoFactura = 4;
+
+            if (dto.pagoInmediato && dto.montoAbonado > 0) {
+                montoAbonado = Number(dto.montoAbonado);
+                montoPendiente = Number(dto.total || 0) - montoAbonado;
+                estadoFactura = montoPendiente <= 0 ? 5 : 4;
+            }
+
+            const controlEntregasActivo = (await db.select().from(schema.configuraciones).where(eq(schema.configuraciones.clave, 'CONTROL_ENTREGAS_ACTIVO')))[0]?.valor === 'true';
+            let estadoEntrega: number | null = null;
+            if (controlEntregasActivo) {
+                const tieneServicios = dto.detalles.some((d: any) => d.idPrendaServicio);
+                if (tieneServicios) estadoEntrega = 7;
+            }
+
+            const nuevaFactura = demoStore.addFactura(userId, {
+                nombrecliente: nombreCliente.trim(),
+                telefonocliente: telefonoCliente,
+                idcliente: dto.idCliente ? Number(dto.idCliente) : null,
+                idusuario: userId,
+                idestado: estadoFactura,
+                numerofactura: numeroFactura,
+                fechacreacion: hoyStr,
+                fechaultimaactualizacion: hoyStr,
+                fechaentregaestimada: dto.fechaEntregaEstimada ? dto.fechaEntregaEstimada.substring(0, 10) : null,
+                fechaentregareal: null,
+                subtotal: String(dto.subtotal || 0),
+                impuestos: String(dto.impuestos || 0),
+                descuento: String(dto.descuento || 0),
+                total: String(dto.total || 0),
+                metodopago: dto.metodoPago || 'efectivo',
+                notas: dto.notas || null,
+                montoabonado: String(montoAbonado),
+                montopendiente: String(montoPendiente),
+                idestadoentrega: estadoEntrega,
+                recogidopor: null,
+                notasentrega: null
+            });
+
+            for (const detalle of dto.detalles) {
+                demoStore.addDetalle(userId, {
+                    idfactura: nuevaFactura.idfactura,
+                    idprendaservicio: detalle.idPrendaServicio ? Number(detalle.idPrendaServicio) : null,
+                    idproducto: detalle.idProducto ? Number(detalle.idProducto) : null,
+                    cantidad: Number(detalle.cantidad),
+                    preciounitario: String(detalle.precioUnitario || 0),
+                    descripcion: detalle.descripcion || null,
+                    fechacreacion: hoyStr
+                });
+            }
+
+            if (dto.pagoInmediato && montoAbonado > 0) {
+                demoStore.addPago(userId, {
+                    idfactura: nuevaFactura.idfactura,
+                    monto: String(montoAbonado),
+                    idestado: 5,
+                    fechapago: hoyStr,
+                    metodopago: dto.metodoPago || 'efectivo',
+                    referencia: dto.referenciaPago || null,
+                    idusuario: userId,
+                    notas: 'Pago inicial al crear factura'
+                });
+            }
+
+            return res.status(201).json({ idFactura: nuevaFactura.idfactura, message: 'Factura creada (modo demo)' });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message || 'Error al crear factura demo' });
+        }
+    }
+    // ── FIN DEMO MODE ──────────────────────────────────────────────────────────
 
     try {
         await db.transaction(async (tx) => {
@@ -386,6 +573,35 @@ export const registrarPago = async (req: AuthRequest, res: Response) => {
     const idFactura = Number(req.params.id);
     const dto = req.body;
     const hoyStr = getDRDateTime();
+
+    if (DEMO_MODE) {
+        if (isDemoId(idFactura)) {
+            const f = demoStore.getFacturaById(userId, idFactura);
+            if (!f) return res.status(404).json({ message: 'Factura no encontrada' });
+            const pendiente = Number(f.montopendiente);
+            if (Number(dto.monto) > pendiente) return res.status(400).json({ message: 'El monto excede el pendiente' });
+            const nuevoAbonado  = Number(f.montoabonado) + Number(dto.monto);
+            const nuevoPendiente = Number(f.total) - nuevoAbonado;
+            demoStore.updateFactura(userId, idFactura, {
+                montoabonado: String(nuevoAbonado),
+                montopendiente: String(nuevoPendiente),
+                idestado: nuevoPendiente <= 0 ? 5 : 4,
+                fechaultimaactualizacion: hoyStr
+            });
+            demoStore.addPago(userId, {
+                idfactura: idFactura,
+                monto: String(dto.monto),
+                idestado: 5,
+                fechapago: hoyStr,
+                metodopago: dto.metodoPago || 'efectivo',
+                referencia: dto.referencia || null,
+                idusuario: userId,
+                notas: dto.notas || null
+            });
+            return res.json({ message: 'Pago registrado (modo demo)' });
+        }
+        return res.status(403).json({ message: 'Modo demo: solo puedes pagar facturas creadas en esta sesion.' });
+    }
 
     try {
         await db.transaction(async (tx) => {
@@ -570,7 +786,16 @@ export const actualizarEstadoEntrega = async (req: Request, res: Response) => {
 
 export const deleteFactura = async (req: Request, res: Response) => {
     const idFactura = Number(req.params.id);
-    
+
+    if (DEMO_MODE) {
+        if (isDemoId(idFactura)) {
+            const userId = Number((req as AuthRequest).user?.nameid);
+            demoStore.deleteFactura(userId, idFactura);
+            return res.status(204).send();
+        }
+        return res.status(403).json({ message: 'Modo demo: no se pueden eliminar datos historicos.' });
+    }
+
     try {
         await db.transaction(async (tx) => {
             const pagos = await tx.select().from(schema.pagos).where(eq(schema.pagos.idfactura, idFactura));
@@ -603,6 +828,15 @@ export const cambiarEstado = async (req: Request, res: Response) => {
     try {
         const idFactura = Number(req.params.id);
         const { idEstado, notas } = req.body;
+
+        if (DEMO_MODE) {
+            if (isDemoId(idFactura)) {
+                const userId = Number((req as AuthRequest).user?.nameid);
+                demoStore.updateFactura(userId, idFactura, { idestado: idEstado, notas: notas || null });
+                return res.json({ message: 'Estado actualizado (modo demo)' });
+            }
+            return res.status(403).json({ message: 'Modo demo: no se pueden modificar datos historicos.' });
+        }
 
         await db.update(schema.facturas).set({
             idestado: idEstado,
