@@ -13,6 +13,8 @@ if (!process.env.DATABASE_URL) {
 // Creamos la conexión
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  family: 4,
 });
 
 // Exportamos la instancia de la base de datos con el esquema
