@@ -56,6 +56,10 @@ app.get('/', (req, res) => {
   res.json({ message: 'Backend Lavanderia Rodriguez activo.' });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Aceptando peticiones solo desde: ${process.env.FRONTEND_URL}`);
