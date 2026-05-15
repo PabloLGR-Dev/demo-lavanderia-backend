@@ -25,6 +25,10 @@ import gruposFacturasRoutes from './routes/grupos-facturas.routes.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get('/health', (_req, res) => {
+  res.status(200).send('OK');
+});
+
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:3001',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -54,10 +58,6 @@ app.use('/api/grupos-facturas', gruposFacturasRoutes);
 
 app.get('/', (_req, res) => {
   res.json({ message: 'Backend Lavanderia Rodriguez activo.' });
-});
-
-app.get('/health', (_req, res) => {
-  res.status(200).send('OK');
 });
 
 app.listen(PORT, () => {
